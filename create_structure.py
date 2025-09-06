@@ -46,9 +46,6 @@ project_structure = {
             "github-actions.yml": "",
             "docker-build.sh": ""
         },
-        "notebooks": {
-            "nyc_taxi_eda.ipynb": ""
-        },
         "docker": {
             "airflow.Dockerfile": "",
             "ml.Dockerfile": "",
