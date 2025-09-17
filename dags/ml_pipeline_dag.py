@@ -24,10 +24,10 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 # -----------------------------
 # S3 Config
 # -----------------------------
-BUCKET = "nyc-taxi-mlopss"
-FILE_KEY = "nyc_taxi_trip_duration.csv"
-AWS_KEY = "AKIA5WLTTNJT33GO6OVM"
-AWS_SECRET = "ISbdHmtr2vAPQL8Pbci4123/tUfGRuQL+ykLynsb"
+BUCKET = "your-bucket"
+FILE_KEY = "file-name"
+AWS_KEY = "access-key"
+AWS_SECRET = "secret-key"
 
 # -----------------------------
 # Define DAG
