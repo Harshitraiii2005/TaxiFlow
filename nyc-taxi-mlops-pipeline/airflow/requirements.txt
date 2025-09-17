@@ -1,5 +1,0 @@
-apache-airflow-providers-amazon
-scikit-learn
-pandas
-joblib
-boto3

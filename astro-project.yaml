@@ -1,5 +1,0 @@
-project:
-  name: taxi-flow
-
-airflow:
-  runtime_version: 10.2.0
