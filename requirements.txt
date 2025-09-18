@@ -2,6 +2,8 @@ boto3
 pandas
 scikit-learn
 flask
-jolib
-astro-run-dag
-python-dotenv<2.0,>0.21.0
+joblib
+plotly==5.20.0
+python-dotenv>=1.0.0,<1.1
+watchdog
+apache-airflow-providers-http

@@ -1,0 +1,40 @@
+name: CI/CD for Astro Airflow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Astro CLI
+        run: |
+          curl -sSL https://install.astronomer.io | sudo bash
+          astro version
+
+      - name: Lint DAGs
+        run: |
+          astro dev lint
+
+      - name: Build Astro Airflow image
+        run: |
+          astro dev build
+
+      - name: Run container and check metrics
+        run: |
+          docker run -d -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
+          sleep 20
+          curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
+
+      - name: Push to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker tag my-astro-airflow:latest ghcr.io/${{ github.repository }}/astro-airflow:latest
+          docker push ghcr.io/${{ github.repository }}/astro-airflow:latest
