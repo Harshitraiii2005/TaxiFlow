@@ -9,47 +9,69 @@ on:
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      # 1️⃣ Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2️⃣ Install Docker (official way, avoids containerd conflicts)
       - name: Install Docker
-        run: sudo apt-get update && sudo apt-get install -y docker.io
+        run: |
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+          sudo usermod -aG docker $USER
+          docker --version
 
+      # 3️⃣ Install Astro CLI
       - name: Install Astro CLI
         run: |
           curl -sSL https://install.astronomer.io | sudo bash
           astro version
 
-      - name: Initialize Astro project (if needed)
+      # 4️⃣ Initialize Astro project (if Dockerfile not present)
+      - name: Initialize Astro project
         run: |
-          # Only if Astro project not initialized
           if [ ! -f "Dockerfile" ]; then
             astro dev init
           fi
 
+      # 5️⃣ Start Astro Airflow in background
       - name: Start Astro Airflow
         run: |
-          # Start Airflow in detached mode
           nohup astro dev start > airflow.log 2>&1 &
-          # Wait until webserver is up
-          echo "Waiting for Airflow to start on port 8080..."
+          echo "Waiting for Airflow webserver on port 8080..."
           for i in {1..30}; do
-            curl -s http://localhost:8080/health || sleep 5
+            if curl -s http://localhost:8080/health | grep "healthy"; then
+              echo "✅ Airflow started"
+              break
+            else
+              sleep 5
+            fi
           done
 
+      # 6️⃣ Build Docker image
       - name: Build Docker image
         run: |
           astro dev build
-          # Tag built image for convenience
+          # Tag the built image
           docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow) my-astro-airflow:latest
 
+      # 7️⃣ Run Docker container
       - name: Run Docker container
         run: |
           docker run -d --name astro-container -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
           echo "Container started"
           sleep 20
 
+      # 8️⃣ Check Prometheus metrics
       - name: Check Prometheus metrics
         run: |
           curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
+
+      # 9️⃣ Optional cleanup
+      - name: Cleanup Docker container
+        if: always()
+        run: |
+          docker stop astro-container || true
+          docker rm astro-container || true
