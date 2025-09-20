@@ -24,8 +24,9 @@ jobs:
 
       - name: Build Astro Airflow image
         run: |
-          # Build and tag consistently
-          astro dev build --tag my-astro-airflow:latest
+          astro dev build
+          # Re-tag the built image to a standard name
+          docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow) my-astro-airflow:latest
 
       - name: Run container and check metrics
         run: |
@@ -34,9 +35,3 @@ jobs:
           curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
           docker stop astro-test
           docker rm astro-test
-
-      - name: Push to GHCR
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker tag my-astro-airflow:latest ghcr.io/${{ github.repository }}/astro-airflow:latest
-          docker push ghcr.io/${{ github.repository }}/astro-airflow:latest
