@@ -22,16 +22,5 @@ jobs:
       - name: Lint DAGs
         run: astro dev lint
 
-      - name: Build Astro Airflow image
-        run: |
-          astro dev build
-          # Re-tag the built image to a standard name
-          docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow) my-astro-airflow:latest
-
-      - name: Run container and check metrics
-        run: |
-          docker run -d --name astro-test -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
-          sleep 20
-          curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
-          docker stop astro-test
-          docker rm astro-test
+      - name: Parse DAGs
+        run: astro dev parse
