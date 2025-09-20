@@ -20,18 +20,20 @@ jobs:
           astro version
 
       - name: Lint DAGs
-        run: |
-          astro dev lint
+        run: astro dev lint
 
       - name: Build Astro Airflow image
         run: |
-          astro dev build
+          # Build and tag consistently
+          astro dev build --tag my-astro-airflow:latest
 
       - name: Run container and check metrics
         run: |
-          docker run -d -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
+          docker run -d --name astro-test -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
           sleep 20
           curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
+          docker stop astro-test
+          docker rm astro-test
 
       - name: Push to GHCR
         run: |
