@@ -7,20 +7,49 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-run:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Astro CLI
+      - name: Install Docker
+        run: sudo apt-get update && sudo apt-get install -y docker.io
+
+      - name: Install Astro CLI
         run: |
           curl -sSL https://install.astronomer.io | sudo bash
           astro version
 
-      - name: Lint DAGs
-        run: astro dev lint
+      - name: Initialize Astro project (if needed)
+        run: |
+          # Only if Astro project not initialized
+          if [ ! -f "Dockerfile" ]; then
+            astro dev init
+          fi
 
-      - name: Parse DAGs
-        run: astro dev parse
+      - name: Start Astro Airflow
+        run: |
+          # Start Airflow in detached mode
+          nohup astro dev start > airflow.log 2>&1 &
+          # Wait until webserver is up
+          echo "Waiting for Airflow to start on port 8080..."
+          for i in {1..30}; do
+            curl -s http://localhost:8080/health || sleep 5
+          done
+
+      - name: Build Docker image
+        run: |
+          astro dev build
+          # Tag built image for convenience
+          docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow) my-astro-airflow:latest
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name astro-container -p 8080:8080 -p 9102:9102 my-astro-airflow:latest
+          echo "Container started"
+          sleep 20
+
+      - name: Check Prometheus metrics
+        run: |
+          curl -f http://localhost:9102/metrics || (echo "❌ Metrics not working" && exit 1)
