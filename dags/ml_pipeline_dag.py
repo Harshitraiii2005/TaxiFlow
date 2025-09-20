@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 import sys
 
-# Add include folder to sys.path
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include'))
 
 from include.ingestion import ingest_from_s3
@@ -13,9 +13,7 @@ from include.preprocessing import preprocess
 from include.train import train_all_models
 from include.evaluate import evaluate_and_save_best_model
 
-# -----------------------------
-# Paths & Config
-# -----------------------------
+
 DATA_DIR = "/tmp/airflow_data"
 MODEL_DIR = os.path.join(DATA_DIR, "models")
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -27,9 +25,7 @@ FILE_KEY = "nyc_taxi_trip_duration.csv"
 AWS_KEY = "your-aws-access-key"
 AWS_SECRET = "your-aws-secret-key"
 
-# -----------------------------
-# DAG Definition
-# -----------------------------
+
 with DAG(
     "ml_pipeline_dag",
     start_date=datetime(2025, 1, 1),
@@ -70,7 +66,7 @@ with DAG(
         ]
     )
 
-    # 🚀 Run Flask app separately after pipeline is done
+    
     trigger_app = BashOperator(
         task_id="trigger_app",
         bash_command=f"""
@@ -84,7 +80,5 @@ with DAG(
         """,
     )
 
-    # -----------------------------
-    # DAG Dependencies
-    # -----------------------------
+   
     ingest_task >> preprocess_task >> train_task >> evaluate_task >> trigger_app
