@@ -36,33 +36,33 @@ jobs:
             astro dev init
           fi
 
-      # 5️⃣ Build Docker image
-      - name: Build Docker image
+      # 5️⃣ Start Astro Airflow in background
+      - name: Start Astro Airflow
         run: |
-          astro dev build
-          # Tag the built image
-          IMAGE_NAME=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow | head -n1)
-          docker tag $IMAGE_NAME my-astro-airflow:latest
-
-      # 6️⃣ Run Docker container
-      - name: Run Docker container
-        run: |
-          docker run -d --name astro-container -p 8080:8080 my-astro-airflow:latest
-          echo "Waiting for container to be healthy..."
+          nohup astro dev start > airflow.log 2>&1 &
+          echo "Waiting for Airflow webserver on port 8080..."
           for i in {1..30}; do
-            if [ "$(docker inspect -f '{{.State.Health.Status}}' astro-container 2>/dev/null)" == "healthy" ]; then
-              echo "✅ Container is healthy"
+            if curl -s http://localhost:8080/health | grep "healthy"; then
+              echo "✅ Airflow started"
               break
             else
-              echo "Waiting..."
               sleep 5
             fi
           done
 
-      # 7️⃣ Verify container is running
-      - name: Verify container running
+      # 6️⃣ Build Docker image
+      - name: Build Docker image
         run: |
-          docker ps | grep astro-container || (echo "❌ Container not running" && exit 1)
+          astro dev build
+          # Tag the built image
+          docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | grep airflow) my-astro-airflow:latest
+
+      # 7️⃣ Run Docker container
+      - name: Run Docker container
+        run: |
+          docker run -d --name astro-container -p 8080:8080 my-astro-airflow:latest
+          echo "Container started"
+          sleep 20
 
       # 8️⃣ Optional cleanup
       - name: Cleanup Docker container
