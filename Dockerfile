@@ -1,20 +1,20 @@
-FROM astrocrpublic.azurecr.io/runtime:3.0-10
+#FROM astrocrpublic.azurecr.io/runtime:3.0-10 -> run this if you want to use astro image with airflow
 
-WORKDIR /include
+# Use Python slim image for building the docker image 
+FROM python:3.12-slim 
 
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy DAGs and include folder
-COPY dags /include/dags
-COPY include /include/include
+# Copy your Flask app
+COPY include/app.py /app/
 
-# Copy custom entrypoint
-COPY include/entrypoint.sh /entrypoint-custom.sh
-RUN chmod +x /entrypoint-custom.sh
+# Expose the port your app runs on
+EXPOSE 5055
 
-# Override entrypoint to run Airflow + Flask + StatsD
-ENTRYPOINT ["/entrypoint-custom.sh"]
-
-# Expose Airflow webserver and metrics
-EXPOSE 8080 9102
+# Start the app
+CMD ["python3", "app.py"]

@@ -22,10 +22,10 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 APP_PATH = os.path.join(os.path.dirname(__file__), "..", "include", "app.py")
 
-BUCKET = "nyc-taxi-mlopss"
+BUCKET = "your-bucket-name"
 FILE_KEY = "nyc_taxi_trip_duration.csv"
-AWS_KEY = "AKIA5WLTTNJT33GO6OVM"
-AWS_SECRET = "ISbdHmtr2vAPQL8Pbci4123/tUfGRuQL+ykLynsb"
+AWS_KEY = "your-aws-access-key"
+AWS_SECRET = "your-aws-secret-key"
 
 # -----------------------------
 # DAG Definition
@@ -72,18 +72,17 @@ with DAG(
 
     # 🚀 Run Flask app separately after pipeline is done
     trigger_app = BashOperator(
-    task_id="trigger_app",
-    bash_command="""
-    if [ -f /tmp/flask.pid ] && kill -0 $(cat /tmp/flask.pid) 2>/dev/null; then
-        echo "Flask app already running with PID $(cat /tmp/flask.pid)";
-    else
-        setsid python3 {{ dag.dag_folder }}/../include/app.py > /tmp/flask.log 2>&1 < /dev/null &
-        echo $! > /tmp/flask.pid
-        echo "Flask app started with PID $(cat /tmp/flask.pid)"
-    fi
-    """,
-  )
-
+        task_id="trigger_app",
+        bash_command=f"""
+        if [ -f /tmp/flask.pid ] && kill -0 $(cat /tmp/flask.pid) 2>/dev/null; then
+            echo "Flask app already running with PID $(cat /tmp/flask.pid)";
+        else
+            setsid python3 {APP_PATH} > /tmp/flask.log 2>&1 < /dev/null &
+            echo $! > /tmp/flask.pid
+            echo "Flask app started with PID $(cat /tmp/flask.pid)"
+        fi
+        """,
+    )
 
     # -----------------------------
     # DAG Dependencies

@@ -1,9 +1,9 @@
-boto3
 pandas
-scikit-learn
 flask
+plotly
 joblib
-plotly==5.20.0
-python-dotenv>=1.0.0,<1.1
 watchdog
-apache-airflow-providers-http
+boto3
+prometheus_client
+
+scikit-learn
